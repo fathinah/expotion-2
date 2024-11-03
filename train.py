@@ -17,7 +17,7 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 from tqdm import tqdm
 
-from coco_mulla.data_loader.cc_dataset_sampler import Dataset, collate_fn
+from coco_mulla.data_loader.dataset_sampler import Dataset, collate_fn
 from coco_mulla.models import CoCoMulla
 
 device = "cuda"
@@ -32,8 +32,8 @@ def _get_free_port():
 
 def get_dataset(rid, dataset_split, sampling_strategy, sampling_prob):
 
-    file_lst = ["data/text/musdb18_full.lst",
-                "data/text/closed_dataset_fm_full.lst"]
+    file_lst = ["train.lst",
+                "train.lst"]
     splits = [
         [1],
         [0],
@@ -60,6 +60,7 @@ def get_dataset(rid, dataset_split, sampling_strategy, sampling_prob):
 
 
 def train_dist(replica_id, replica_count, port, model_dir, args):
+    print('masuk')
     os.environ['MASTER_ADDR'] = 'localhost'
     os.environ['MASTER_PORT'] = str(port)
     torch.distributed.init_process_group('nccl', rank=replica_id, world_size=replica_count)
@@ -158,18 +159,31 @@ def main(args):
     spawn(train_dist, args=(world_size, port, model_dir, args), nprocs=world_size, join=True)
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-d', '--experiment_folder', type=str)
-    parser.add_argument('-n', '--experiment_name', type=str)
-    parser.add_argument('-l', '--num_layers', type=int)
-    parser.add_argument('-t', '--text_path', type=str, default=None)
-    parser.add_argument('-r', '--latent_dim', type=int)
-    parser.add_argument('-lr', '--learning_rate', type=float)
-    parser.add_argument('-s', '--sampling_strategy', type=str)
-    parser.add_argument('-a', '--sampling_prob_a', type=float, default=0.)
-    parser.add_argument('-b', '--sampling_prob_b', type=float, default=0.)
-    parser.add_argument('-ds', '--dataset', type=int, default=0)
+# if __name__ == "__main__":
+#     # parser = argparse.ArgumentParser()
+#     # parser.add_argument('-d', '--experiment_folder', type=str)
+#     # parser.add_argument('-n', '--experiment_name', type=str)
+#     # parser.add_argument('-l', '--num_layers', type=int)
+#     # parser.add_argument('-t', '--text_path', type=str, default=None)
+#     # parser.add_argument('-r', '--latent_dim', type=int)
+#     # parser.add_argument('-lr', '--learning_rate', type=float)
+#     # parser.add_argument('-s', '--sampling_strategy', type=str)
+#     # parser.add_argument('-a', '--sampling_prob_a', type=float, default=0.)
+#     # parser.add_argument('-b', '--sampling_prob_b', type=float, default=0.)
+#     # parser.add_argument('-ds', '--dataset', type=int, default=0)
 
-    args = parser.parse_args()
-    main(args)
+#     # args = parser.parse_args()
+#     # main(args)
+#     args = {
+#         "num_layers": 48,
+#         "latent_dim": 12,
+#         "experiment_folder": "/l/users/fathinah.izzati/coco-mulla-repo/expe",
+#         "experiment_name": "experiment_1",
+#         "prompt_path": "/l/users/fathinah.izzati/coco-mulla-repo/demo/input/let_it_be.prompt.txt",
+#         'sampling_strategy':'prob-based',
+#         "dataset": '/l/users/fathinah.izzati/coco-mulla-repo/train.lst',
+#         'learning_rate':0.1
+
+#     }
+#     args = SimpleNamespace(**args)
+#     main(args)

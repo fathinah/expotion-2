@@ -24,12 +24,6 @@ device = "cuda"
 N_GPUS = 1
 
 
-def _get_free_port():
-    import socketserver
-    with socketserver.TCPServer(('localhost', 0), None) as s:
-        return s.server_address[1]
-
-
 
 def get_dataset(dataset_split, sampling_strategy, sampling_prob):
 
@@ -59,22 +53,6 @@ def get_dataset(dataset_split, sampling_strategy, sampling_prob):
 
     return dataset, dataloader
 
-
-def train_dist(replica_id, replica_count, port, model_dir, args):
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = str(port)
-    torch.distributed.init_process_group('nccl', rank=replica_id, world_size=replica_count)
-    device = torch.device('cuda', replica_id)
-    torch.cuda.set_device(device)
-    model = CoCoMulla(TrainCfg.sample_sec, num_layers=args.num_layers, latent_dim=args.latent_dim).to(device)
-    model.set_training()
-    model = DDP(model, [replica_id])
-    dataset, dataloader = get_dataset(rid=replica_id, dataset_split=args.dataset,
-                                      sampling_strategy=args.sampling_strategy,
-                                      sampling_prob=[args.sampling_prob_a, args.sampling_prob_b])
-
-    train(replica_id, model, dataset, dataloader, device, model_dir,
-          args.learning_rate)
 
 
 def loss_fn(outputs, y):
@@ -142,29 +120,16 @@ def train(model, dataset, dataloader, device, model_dir, learning_rate):
             model.module.save_weights(os.path.join(model_dir, f"diff_{e}_end.pth"))
 
 
-def main(args):
-    experiment_folder = args.experiment_folder
-    experiment_name = args.experiment_name
-
-    if not os.path.exists(experiment_folder):
-        os.mkdir(experiment_folder)
-    model_dir = os.path.join(experiment_folder, experiment_name)
-    if not os.path.exists(model_dir):
-        os.mkdir(model_dir)
-    world_size = N_GPUS
-    port = _get_free_port()
-    spawn(train_dist, args=(world_size, port, model_dir, args), nprocs=world_size, join=True)
-
 
 from types import SimpleNamespace
 args = {
     "num_layers": 48,
     "latent_dim": 12,
-    "experiment_folder": "/l/users/gus.xia/fathinah/coco-mulla-repo/expe",
+    "experiment_folder": "/l/users/fathinah.izzati/coco-mulla-repo/expe",
     "experiment_name": "experiment_1",
-    "prompt_path": "/l/users/gus.xia/fathinah/coco-mulla-repo/demo/input/let_it_be.prompt.txt",
+    "prompt_path": "/l/users/fathinah.izzati/coco-mulla-repo/demo/input/let_it_be.prompt.txt",
     'sampling_strategy':'prob-based',
-    "dataset": '/l/users/gus.xia/fathinah/coco-mulla-repo/train.lst',
+    "dataset": '/l/users/fathinah.izzati/coco-mulla-repo/train.lst',
     'learning_rate':0.1
 
 }
