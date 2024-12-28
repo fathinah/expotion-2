@@ -1,0 +1,14 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Mac system files
+.DS_Store
+
+# Log files
+*.log
+demo/
+*.pth
+*.mp4
+*.npy
